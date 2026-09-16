@@ -17,9 +17,11 @@ ok()  { printf '  ✅ %s\n' "$*"; }
 ng()  { printf '  ❌ %s\n' "$*" >&2; }
 
 # ── 0. もう入っている場合は更新するだけ ───────────────────────
-if [ -e "$WS/.git" ]; then
+# 最後まで終わっているときだけ「済み」とみなす。
+# 途中で落ちた場合は、もう一度実行すれば続きから埋まる。
+if [ -e "$WS/.git" ] && [ -x "$BIN/brain-pull.sh" ]; then
   say "すでにセットアップ済み。資料を最新にします"
-  [ -x "$BIN/brain-pull.sh" ] && "$BIN/brain-pull.sh"
+  "$BIN/brain-pull.sh"
   ok "完了"
   exit 0
 fi
@@ -94,13 +96,20 @@ done
 
 # ── 5. 資料と送信フォルダを取ってくる ──────────────────────────
 say "5/8  会社の資料を取得しています"
-git clone -q "git@hk102-brain.github.com:$OWNER/hk102-brain.git" "$WS" < /dev/null
-ok "$WS"
-git clone -q "git@hk102-inbox.github.com:$OWNER/hk102-inbox.git" "$OUT" < /dev/null
+if [ -e "$WS/.git" ]; then
+  ok "$WS（取得済み）"
+else
+  git clone -q "git@hk102-brain.github.com:$OWNER/hk102-brain.git" "$WS" < /dev/null
+  ok "$WS"
+fi
+if [ -e "$OUT/.git" ]; then
+  ok "$OUT（取得済み）"
+else
+  git clone -q "git@hk102-inbox.github.com:$OWNER/hk102-inbox.git" "$OUT" < /dev/null
+fi
 # 送信時の名前はこのフォルダの中だけで設定する（Mac全体のgit設定は変えない）
 git -C "$OUT" config user.name  "Jion"
 git -C "$OUT" config user.email "jion@hk102.local"
-ok "$OUT"
 
 # ── 6. 資料フォルダを書き換え不可にして、設定を書く ────────────────
 say "6/8  資料フォルダを読み取り専用にしています"
@@ -132,8 +141,8 @@ EOF
   OPEN_HINT="デスクトップの「102の仕事」をダブルクリック"
 else
   # Claude Code アプリだけの場合。アプリでこのフォルダを開けば同じように動く
-  ok "Claude Code アプリで $WS を開いてください"
-  OPEN_HINT="Claude Code アプリで「$WS」フォルダを開く"
+  ok "Claude Code アプリで ${WS} を開いてください"
+  OPEN_HINT="Claude Code アプリで「${WS}」フォルダを開く"
 fi
 open -R "$WS" 2>/dev/null || true
 
@@ -171,7 +180,7 @@ cat <<EOM
    $OPEN_HINT
  で開きます。日本語で話しかけるだけで大丈夫です
 
- 会社の資料: $WS （読むだけ）
- 作ったもの: $OUT （自動でリョウガに届く）
+ 会社の資料: ${WS} （読むだけ）
+ 作ったもの: ${OUT} （自動でリョウガに届く）
 ──────────────────────────────────
 EOM
