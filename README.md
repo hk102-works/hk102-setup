@@ -3,8 +3,10 @@
 102 INTERNATIONAL の会社資料を Mac に入れるためのスクリプト。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hk102-works/hk102-setup/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hk102-works/hk102-setup/main/install.sh -o /tmp/hk102-install.sh && bash /tmp/hk102-install.sh
 ```
+
+一度ファイルに落としてから実行します。`curl ... | bash` だと、途中で標準入力を読むコマンドが「まだ実行していないスクリプトの残り」を食べてしまい、静かに途中終了することがあるためです。
 
 ## 入るもの
 

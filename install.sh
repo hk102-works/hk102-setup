@@ -80,7 +80,9 @@ say "4/8  つながるか確認しています"
 for r in brain inbox; do
   # GitHub は認証が通っても shell を渡さないので ssh は必ず exit 1 になる。
   # pipefail 下でそのまま条件に使うと必ず失敗するため、出力を受け取ってから判定する。
-  out="$(ssh -o StrictHostKeyChecking=accept-new -T "git@hk102-$r.github.com" 2>&1 || true)"
+  # -n は必須。これが無いと curl | bash のとき ssh が「残りのスクリプト」を
+  # 標準入力として吸い込み、bash が読むものを失って途中で静かに終わる。
+  out="$(ssh -n -o StrictHostKeyChecking=accept-new -T "git@hk102-$r.github.com" 2>&1 || true)"
   if printf '%s' "$out" | grep -qE 'successfully authenticated|does not provide shell'; then
     ok "hk102-$r OK"
   else
@@ -92,9 +94,9 @@ done
 
 # ── 5. 資料と送信フォルダを取ってくる ──────────────────────────
 say "5/8  会社の資料を取得しています"
-git clone -q "git@hk102-brain.github.com:$OWNER/hk102-brain.git" "$WS"
+git clone -q "git@hk102-brain.github.com:$OWNER/hk102-brain.git" "$WS" < /dev/null
 ok "$WS"
-git clone -q "git@hk102-inbox.github.com:$OWNER/hk102-inbox.git" "$OUT"
+git clone -q "git@hk102-inbox.github.com:$OWNER/hk102-inbox.git" "$OUT" < /dev/null
 # 送信時の名前はこのフォルダの中だけで設定する（Mac全体のgit設定は変えない）
 git -C "$OUT" config user.name  "Jion"
 git -C "$OUT" config user.email "jion@hk102.local"
