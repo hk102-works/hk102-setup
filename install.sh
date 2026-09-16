@@ -112,17 +112,24 @@ EOF
 ok "書き込み不可にして、資料の索引を作りました"
 
 # ── 7. 起動アイコンと自動更新 ───────────────────────────────
-say "7/8  デスクトップに起動アイコンを置いています"
+say "7/8  起動の導線を用意しています"
 CLAUDE_BIN="$(command -v claude || true)"
-[ -n "$CLAUDE_BIN" ] || { ng "Claude Code が見つかりません（あとで入れてください）"; CLAUDE_BIN="claude"; }
-LAUNCHER="$HOME/Desktop/102の仕事.command"
-cat > "$LAUNCHER" <<EOF
+if [ -n "$CLAUDE_BIN" ]; then
+  LAUNCHER="$HOME/Desktop/102の仕事.command"
+  cat > "$LAUNCHER" <<EOF
 #!/bin/bash
 cd "$WS" || exit 1
 exec "$CLAUDE_BIN"
 EOF
-chmod +x "$LAUNCHER"
-ok "デスクトップの「102の仕事」をダブルクリックで開きます"
+  chmod +x "$LAUNCHER"
+  ok "デスクトップの「102の仕事」をダブルクリックで開きます"
+  OPEN_HINT="デスクトップの「102の仕事」をダブルクリック"
+else
+  # Claude Code アプリだけの場合。アプリでこのフォルダを開けば同じように動く
+  ok "Claude Code アプリで $WS を開いてください"
+  OPEN_HINT="Claude Code アプリで「$WS」フォルダを開く"
+fi
+open -R "$WS" 2>/dev/null || true
 
 mkdir -p "$BIN"
 cp "$WS/setup/brain-pull.sh" "$WS/setup/outbox-push.sh" "$BIN/"
@@ -144,17 +151,21 @@ launchctl list | grep -q com.ryoga && ng "com.ryoga.* が存在します（リ�
 [ -d "$HOME/.claude/skills" ] && ok "Mac全体のスキルは触っていません（$(ls "$HOME/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')件のまま）" \
   || ok "Mac全体の設定は触っていません"
 
-cat <<'EOM'
+cat <<EOM
 
 ──────────────────────────────────
  セットアップが終わりました
 
  あと2つだけ、画面の指示にしたがって進めてください
 
-   1. ターミナルで  claude  と打って、自分のアカウントでログイン
+   1. Claude Code を自分のアカウントでログイン
    2. Google ドライブ（パソコン版）を入れて、自分のGoogleでログイン
 
- 以降は「デスクトップの 102の仕事 をダブルクリック」で
- Claudeが開きます。日本語で話しかけるだけで大丈夫です
+ 以降は
+   $OPEN_HINT
+ で開きます。日本語で話しかけるだけで大丈夫です
+
+ 会社の資料: $WS （読むだけ）
+ 作ったもの: $OUT （自動でリョウガに届く）
 ──────────────────────────────────
 EOM
