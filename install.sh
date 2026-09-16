@@ -78,10 +78,14 @@ echo
 
 say "4/8  つながるか確認しています"
 for r in brain inbox; do
-  if ssh -o StrictHostKeyChecking=accept-new -T "git@hk102-$r.github.com" 2>&1 | grep -q 'successfully authenticated\|does not provide shell'; then
+  # GitHub は認証が通っても shell を渡さないので ssh は必ず exit 1 になる。
+  # pipefail 下でそのまま条件に使うと必ず失敗するため、出力を受け取ってから判定する。
+  out="$(ssh -o StrictHostKeyChecking=accept-new -T "git@hk102-$r.github.com" 2>&1 || true)"
+  if printf '%s' "$out" | grep -qE 'successfully authenticated|does not provide shell'; then
     ok "hk102-$r OK"
   else
     ng "hk102-$r につながりません。鍵の登録を確認してください"
+    echo "$out"
     exit 1
   fi
 done
